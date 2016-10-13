@@ -40,8 +40,9 @@ def download(symbol, reportname):
     profitfile.close()
 
     # 类目载入
-    cur.execute('SELECT * FROM investment.item WHERE GROUP = \'' + reportname + '\'')
+    cur.execute('SELECT * FROM investment.t_163_item WHERE group_name = \'' + reportname + '\'')
     for row in cur:
+        print('123')
         itemtype[row[2]] = row[0]
 
     # 读取 csv
@@ -78,7 +79,8 @@ def download(symbol, reportname):
 
 
 def main():
-    joozy = input('下载网易股票财报，股票代码:')
+    # joozy = input('下载网易股票财报，股票代码:')
+    joozy = '600779'
     pattern = re.compile(r'(\d{6})')
     match = pattern.findall(joozy)
 
