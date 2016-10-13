@@ -24,7 +24,7 @@ reporttype = {'利润表': {'url': 'http://quotes.money.163.com/service/lrb_%s.h
 
 itemtype = {}  # 类目
 reportlist = []
-conn = psycopg2.connect(host='127.0.0.1', user='shaw', passwd='123456')  # 数据库连接
+conn = psycopg2.connect(host='127.0.0.1', user='shaw', password='123456',database='shawdb')  # 数据库连接
 cur = conn.cursor()
 h = httplib2.Http('.cache')
 executesql = 'INSERT INTO investment.t_163_data VALUES '
@@ -33,13 +33,14 @@ executesql = 'INSERT INTO investment.t_163_data VALUES '
 def download(symbol, reportname):
     # 下载文件
     resp, content = h.request(reporttype[reportname]['url'] % symbol)
+    print(reporttype[reportname]['url'] % symbol)
     filename = 'csv/' + symbol + '/' + reportname + '.csv'
     profitfile = open(filename, 'wb+')
     profitfile.write(content)
     profitfile.close()
 
     # 类目载入
-    cur.execute('SELECT * FROM investment.item WHERE `GROUP` = \'' + reportname + '\'')
+    cur.execute('SELECT * FROM investment.item WHERE GROUP = \'' + reportname + '\'')
     for row in cur:
         itemtype[row[2]] = row[0]
 
@@ -86,11 +87,12 @@ def main():
     else:
         for symbol in match:
             print('# --------------------------------------------')
-            cur.execute('DELETE FROM t_163_data WHERE SYMBOL = \'' + symbol + '\'')
+            cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
             if not os.path.exists('csv/' + symbol):
                 os.makedirs('csv/' + symbol)
 
             for i in reporttype:
+                print(i)
                 download(symbol, i)
 
         if isremovecsv:
