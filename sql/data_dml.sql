@@ -1,4 +1,4 @@
-INSERT INTO `t_163_item` (`id`, `group`, `name`, `parents`, `show_code`)
+INSERT INTO t_163_item (id, group, name, parents, show_code)
 VALUES
 	(1, '主要财务指标', '基本每股收益(元)', 0, 1),
 	(2, '主要财务指标', '每股净资产(元)', 0, 1),
