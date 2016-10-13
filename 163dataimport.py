@@ -7,7 +7,7 @@ import csv
 import re
 import sys
 
-import pymysql
+import psycopg2
 import httplib2
 
 
@@ -24,12 +24,10 @@ reporttype = {'利润表': {'url': 'http://quotes.money.163.com/service/lrb_%s.h
 
 itemtype = {}  # 类目
 reportlist = []
-conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd='',
-                       db='investment',
-                       charset='utf8')  # 数据库连接
+conn = psycopg2.connect(host='127.0.0.1', user='shaw', passwd='123456')  # 数据库连接
 cur = conn.cursor()
 h = httplib2.Http('.cache')
-executesql = 'INSERT INTO t_163_data VALUES '
+executesql = 'INSERT INTO investment.t_163_data VALUES '
 
 
 def download(symbol, reportname):
@@ -41,7 +39,7 @@ def download(symbol, reportname):
     profitfile.close()
 
     # 类目载入
-    cur.execute('SELECT * FROM t_163_item WHERE `GROUP` = \'' + reportname + '\'')
+    cur.execute('SELECT * FROM investment.item WHERE `GROUP` = \'' + reportname + '\'')
     for row in cur:
         itemtype[row[2]] = row[0]
 
