@@ -9,25 +9,27 @@ import sys
 
 import psycopg2
 import httplib2
+import pandas as pd
 
 
 class pg_conn(object):
-	def __init__(self):
-		# 数据库连接
-		self.conn = psycopg2.connect(host='127.0.0.1', 
-									 user='shaw', 
-									 password='123456',
-									 database='shawdb')  
-		self.cur = conn.cursor()
+    def __init__(self):
+        # 数据库连接
+        self.conn = psycopg2.connect(host='127.0.0.1',
+                                     user='shaw',
+                                     password='123456',
+                                     database='shawdb')
 
-	def get_conn(self):
-		return self.conn
+        self.cur = self.conn.cursor()
 
-	def get_cur(self):
-		return self.cur
+    def get_conn(self):
+        return self.conn
 
-	def __del__(self):
-		self.conn.commit()
+    def get_cur(self):
+        return self.cur
+
+    def __del__(self):
+        self.conn.commit()
         self.cur.close()
         self.conn.close()
 
@@ -47,11 +49,13 @@ itemtype = {}  # 类目
 reportlist = []
 h = httplib2.Http('.cache')
 executesql = 'INSERT INTO investment.t_163_data VALUES '
-
+db = pg_conn()
+cur = db.get_cur()
 
 def insert_data_to_database(symbol, reportname, filename):
-	cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
-	# 类目载入
+
+    cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
+    # 类目载入
     cur.execute('SELECT * FROM investment.t_163_item WHERE group_name = \'' + reportname + '\'')
     for row in cur:
         itemtype[row[2]] = row[0]
@@ -98,19 +102,26 @@ def download(symbol, reportname):
     profitfile.write(content)
     profitfile.close()
 
-    
+
+def get_all_symbol():
+    code_list = pd.read_csv('resources/code_list_choose.csv', encoding='gbk')
+    code_list = code_list['ticker']
+    return list(map(fill_code_len, code_list.tolist()))
 
 
-def main():
-	
-	db = pg_conn()
-	cur = db.get_cur()
-	
-    joozy = input('下载网易股票财报，股票代码:')
+# 补齐代码缺失位数
+def fill_code_len(ticker):
+    ticker = '000000%s' % ticker
+    return ticker[-6:]
+
+
+def main(joozy):
+
+    # joozy = input('下载网易股票财报，股票代码:')
     # joozy = '600779'
     pattern = re.compile(r'(\d{6})')
     match = pattern.findall(joozy)
-
+    print('下载网易股票财报，股票代码:' + joozy)
     if len(match) == 0:
         pass
     else:
@@ -122,13 +133,14 @@ def main():
             for i in reporttype:
                 download(symbol, i)
 
-        if isremovecsv:
-            shutil.rmtree('csv/' + symbol)
+            if isremovecsv:
+                shutil.rmtree('csv/' + symbol)
         if len(executesql):
-        	cur.execute(executesql[:-1])
-        
+            cur.execute(executesql[:-1])
+
     pass
 
-
 if __name__ == '__main__':
-    sys.exit(main())
+    for i in get_all_symbol():
+        main(i)
+    sys.exit()
