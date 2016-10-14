@@ -42,9 +42,8 @@ def download(symbol, reportname):
     # 类目载入
     cur.execute('SELECT * FROM investment.t_163_item WHERE group_name = \'' + reportname + '\'')
     for row in cur:
-        print('123')
         itemtype[row[2]] = row[0]
-
+    print(reportname)
     # 读取 csv
     csvreader = csv.reader(open(filename, 'r', encoding='gbk'))
     for row in csvreader:
@@ -94,7 +93,6 @@ def main():
                 os.makedirs('csv/' + symbol)
 
             for i in reporttype:
-                print(i)
                 download(symbol, i)
 
         if isremovecsv:

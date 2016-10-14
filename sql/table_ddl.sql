@@ -33,42 +33,44 @@ COMMENT on column investment.t_163_item.show_code is '展示开关';
 
 
 -- 创建K线数据表
-DROP TABLE IF EXISTS t_k_line;
-CREATE TABLE t_k_line (
-  symbol   VARCHAR(20) NOT NULL DEFAULT ''
-  COMMENT '股票代码',
-  date     DATE        NOT NULL DEFAULT '0000-00-00'
-  COMMENT '日期',
-  open     FLOAT DEFAULT NULL
-  COMMENT '开盘价',
-  close    FLOAT DEFAULT NULL
-  COMMENT '收盘价',
-  high     FLOAT DEFAULT NULL
-  COMMENT '最高价',
-  low      FLOAT DEFAULT NULL
-  COMMENT '最低价',
-  chg      FLOAT DEFAULT NULL
-  COMMENT '涨跌价格',
-  percent  FLOAT DEFAULT NULL
-  COMMENT '涨跌率',
-  turnrate FLOAT DEFAULT NULL
-  COMMENT '换手率',
-  ma5      FLOAT DEFAULT NULL
-  COMMENT '5日均价',
-  ma10     FLOAT DEFAULT NULL
-  COMMENT '10日均价',
-  ma20     FLOAT DEFAULT NULL
-  COMMENT '20日均价',
-  ma30     FLOAT DEFAULT NULL
-  COMMENT '30日均价',
+DROP TABLE IF EXISTS investment.t_k_line;
+CREATE TABLE investment.t_k_line (
+  symbol   VARCHAR(20) NOT NULL DEFAULT '',
+  date     DATE        NOT NULL DEFAULT '0000-00-00',
+  open     FLOAT DEFAULT NULL,
+  close    FLOAT DEFAULT NULL,
+  high     FLOAT DEFAULT NULL,
+  low      FLOAT DEFAULT NULL,
+  chg      FLOAT DEFAULT NULL,
+  percent  FLOAT DEFAULT NULL,
+  turnrate FLOAT DEFAULT NULL,
+  ma5      FLOAT DEFAULT NULL,
+  ma10     FLOAT DEFAULT NULL,
+  ma20     FLOAT DEFAULT NULL,
+  ma30     FLOAT DEFAULT NULL,
   PRIMARY KEY (symbol, date)
 );
 
+
+COMMENT on column investment.t_k_line.symbol is '股票代码';
+COMMENT on column investment.t_k_line.date is '日期';
+COMMENT on column investment.t_k_line.open is '开盘价';
+COMMENT on column investment.t_k_line.close is '收盘价';
+COMMENT on column investment.t_k_line.high is '最高价';
+COMMENT on column investment.t_k_line.low is '最低价';
+COMMENT on column investment.t_k_line.chg is '涨跌价格';
+COMMENT on column investment.t_k_line.percent is '涨跌率';
+COMMENT on column investment.t_k_line.turnrate is '换手率';
+COMMENT on column investment.t_k_line.ma5 is '5日均价';
+COMMENT on column investment.t_k_line.ma10 is '10日均价';
+COMMENT on column investment.t_k_line.ma20 is '20日均价';
+COMMENT on column investment.t_k_line.ma30 is '30日均价';
+
 -- 创建股票代码对应表
-DROP TABLE IF EXISTS t_stock;
+DROP TABLE IF EXISTS investment.t_stock;
 CREATE TABLE t_stock (
   symbol   VARCHAR(11) NOT NULL DEFAULT '',
   name     VARCHAR(11) DEFAULT NULL,
-  optional TINYINT(2)  NOT NULL,
+  optional int  NOT NULL,
   PRIMARY KEY (symbol)
 );
