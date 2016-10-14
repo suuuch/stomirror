@@ -11,6 +11,27 @@ import psycopg2
 import httplib2
 
 
+class pg_conn(object):
+	def __init__(self):
+		# 数据库连接
+		self.conn = psycopg2.connect(host='127.0.0.1', 
+									 user='shaw', 
+									 password='123456',
+									 database='shawdb')  
+		self.cur = conn.cursor()
+
+	def get_conn(self):
+		return self.conn
+
+	def get_cur(self):
+		return self.cur
+
+	def __del__(self):
+		self.conn.commit()
+        self.cur.close()
+        self.conn.close()
+
+
 isremovecsv = False  # 是否删掉CSV文件
 reporttype = {'利润表': {'url': 'http://quotes.money.163.com/service/lrb_%s.html'},
               '主要财务指标': {'url': 'http://quotes.money.163.com/service/zycwzb_%s.html'},
@@ -24,26 +45,17 @@ reporttype = {'利润表': {'url': 'http://quotes.money.163.com/service/lrb_%s.h
 
 itemtype = {}  # 类目
 reportlist = []
-conn = psycopg2.connect(host='127.0.0.1', user='shaw', password='123456',database='shawdb')  # 数据库连接
-cur = conn.cursor()
 h = httplib2.Http('.cache')
 executesql = 'INSERT INTO investment.t_163_data VALUES '
 
 
-def download(symbol, reportname):
-    # 下载文件
-    resp, content = h.request(reporttype[reportname]['url'] % symbol)
-    print(reporttype[reportname]['url'] % symbol)
-    filename = 'csv/' + symbol + '/' + reportname + '.csv'
-    profitfile = open(filename, 'wb+')
-    profitfile.write(content)
-    profitfile.close()
-
-    # 类目载入
+def insert_data_to_database(symbol, reportname, filename):
+	cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
+	# 类目载入
     cur.execute('SELECT * FROM investment.t_163_item WHERE group_name = \'' + reportname + '\'')
     for row in cur:
         itemtype[row[2]] = row[0]
-    print(reportname)
+
     # 读取 csv
     csvreader = csv.reader(open(filename, 'r', encoding='gbk'))
     for row in csvreader:
@@ -77,9 +89,25 @@ def download(symbol, reportname):
     pass
 
 
+def download(symbol, reportname):
+    # 下载文件
+    resp, content = h.request(reporttype[reportname]['url'] % symbol)
+    print(reporttype[reportname]['url'] % symbol)
+    filename = 'csv/' + symbol + '/' + reportname + '.csv'
+    profitfile = open(filename, 'wb+')
+    profitfile.write(content)
+    profitfile.close()
+
+    
+
+
 def main():
-    # joozy = input('下载网易股票财报，股票代码:')
-    joozy = '600779'
+	
+	db = pg_conn()
+	cur = db.get_cur()
+	
+    joozy = input('下载网易股票财报，股票代码:')
+    # joozy = '600779'
     pattern = re.compile(r'(\d{6})')
     match = pattern.findall(joozy)
 
@@ -88,7 +116,6 @@ def main():
     else:
         for symbol in match:
             print('# --------------------------------------------')
-            cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
             if not os.path.exists('csv/' + symbol):
                 os.makedirs('csv/' + symbol)
 
@@ -97,10 +124,9 @@ def main():
 
         if isremovecsv:
             shutil.rmtree('csv/' + symbol)
-        cur.execute(executesql[:-1])
-        conn.commit()
-        cur.close()
-        conn.close()
+        if len(executesql):
+        	cur.execute(executesql[:-1])
+        
     pass
 
 
