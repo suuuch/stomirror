@@ -36,7 +36,7 @@ COMMENT on column investment.t_163_item.show_code is '展示开关';
 DROP TABLE IF EXISTS investment.t_k_line;
 CREATE TABLE investment.t_k_line (
   symbol   VARCHAR(20) NOT NULL DEFAULT '',
-  date     DATE        NOT NULL DEFAULT '0000-00-00',
+  date     DATE        NOT NULL DEFAULT '1970-01-01',
   open     FLOAT DEFAULT NULL,
   close    FLOAT DEFAULT NULL,
   high     FLOAT DEFAULT NULL,
@@ -68,7 +68,7 @@ COMMENT on column investment.t_k_line.ma30 is '30日均价';
 
 -- 创建股票代码对应表
 DROP TABLE IF EXISTS investment.t_stock;
-CREATE TABLE t_stock (
+CREATE TABLE investment.t_stock (
   symbol   VARCHAR(11) NOT NULL DEFAULT '',
   name     VARCHAR(11) DEFAULT NULL,
   optional int  NOT NULL,
