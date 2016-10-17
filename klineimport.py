@@ -2,14 +2,6 @@
 import re
 
 __author__ = 'airsen'
-
-import json
-import sys
-import datetime
-
-import httplib2
-import pymysql
-
 """
 reference url:
 http://quotes.money.163.com/hs/service/marketradar_ajax.php?page=0&query=STYPE%3AEQA&types=&count=28&type=query&order=desc
@@ -46,42 +38,58 @@ http://quotes.money.163.com/service/xjllb_601398.html
 http://quotes.money.163.com/f10/dbfx_601398.html
 """
 
-def main():
-    symbol = input('下载K线数据，股票代码:')
-    pattern = re.compile(r'\d{6}')
-    match = pattern.search(symbol)
-    simplesymbol = match.group()
 
-    accesstoken = 'access_token=Pm0HVhQUxPHTd0osDjwJ4Y&_=1393950527823'
-    h = httplib2.Http('.cache')
-    resp, content = h.request(
-        'http://xueqiu.com/stock/forchartk/stocklist.json?period=1day&type=before&' + accesstoken + '&symbol=' + symbol)
+import requests
+import re
+import datetime
+import urllib
+import pandas as pd
+import numpy as np
+from sqlalchemy import create_engine
+Engine=create_engine("postgresql://shaw:123456@127.0.0.1:5432/shawdb")
+from multiprocessing import Pool
 
-    klinejson = json.loads(str(content, 'utf-8'))
 
-    chartlist = klinejson['chartlist']
-    print('总长度为:' + str(len(chartlist)))
+# In[2]:
 
-    conn = pymysql.connect(host='127.0.0.1', unix_socket='/tmp/mysql.sock', user='root', passwd='', db='investment',
-                           charset='utf8')
-    cur = conn.cursor()
-    cur.execute('DELETE FROM T_K_LINE WHERE SYMBOL = \'' + simplesymbol + '\'')  # 删除
 
-    insertsql = 'INSERT INTO T_K_LINE VALUES '
-    insertvalues = ''
+def get163stocklist():
+    stocklist163 = []
+    url='http://quotes.money.163.com/hs/service/marketradar_ajax.php?page=0&query=STYPE%3AEQA&types=&count=3000&type=query&order=desc'
+    r=requests.get(url)
+    data=re.findall(r'"SYMBOL":"[0-9]{6}"',r.text)
+    data=re.findall("[603][0-9]{5}",str(data))
 
-    for chart in chartlist:
-        insertvalues += '(\'' + simplesymbol + '\',\'' + str(
-            datetime.datetime.strptime(chart['time'], '%a %b %d %H:%M:%S +0800 %Y')) + '\',' + str(
-            chart['open']) + ',' + str(
-            chart['close']) + ',' + str(chart['high']) + ',' + str(chart['low']) + ',' + str(chart['chg']) + ',' + str(
-            chart['percent']) + ',' + str(chart['turnrate']) + ',' + str(chart['ma5']) + ',' + str(
-            chart['ma10']) + ',' + str(chart['ma20']) + ',' + str(chart['ma30']) + '),'
-    cur.execute(insertsql + insertvalues[:-1])
-    conn.commit()
-    cur.close()
-    conn.close()
+
+    for i in data:
+        if i[0]=="6":
+            i='0'+i
+            stocklist163.append(i)
+        elif i[0]=="3":
+            i= '1'+i
+            stocklist163.append(i)
+        elif i[0]=="0":
+            i= '1'+i
+            stocklist163.append(i)
+
+     return stocklist163
+
+
+def get163history(code):
+    downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start=19900101&end='+datetime.datetime.today().strftime("%Y%m%d")+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
+    urllib.request.urlretrieve(downloadurl,'csv/'+code+'.xls')
+    xl = pd.read_csv('csv/'+code+'.xls', sep=",", encoding='gb2312')
+    xlx=xl.replace('None',np.nan) 
+    for i in xlx.columns[3:]:
+        xlx[i]=xlx[i].astype(float)
+    xlx.to_sql('nehistorypricetest',Engine,if_exists='append')
+    return xl.head()
+
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    stocklist163 = get163stocklist() 
+    print(datetime.datetime.today())
+    pool=Pool(4)
+    pool.map(get163history,stocklist163)
+    print(datetime.datetime.today())
