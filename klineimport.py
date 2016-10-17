@@ -77,13 +77,15 @@ def get163stocklist():
 
 def get163history(code):
     downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start=19900101&end='+datetime.datetime.today().strftime("%Y%m%d")+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
-    urllib.request.urlretrieve(downloadurl,'csv/'+code+'.xls')
-    xl = pd.read_csv('csv/'+code+'.xls', sep=",", encoding='gb2312')
+    s=requests.get(downloadurl).content
+    xl=pd.read_csv(io.StringIO(s.decode('gb2312')))
+    #xl = pd.read_csv(downloadurl, sep=",", encoding='utf-8')
     xlx=xl.replace('None',np.nan) 
     for i in xlx.columns[3:]:
         xlx[i]=xlx[i].astype(float)
+    df["date"]=datetime.datetime.today().strftime('%Y-%m-%d')
+    df['time']=datetime.datetime.today().strftime('%H:%M:%S')
     xlx.to_sql('nehistorypricetest',Engine,if_exists='append')
-    return xl.head()
 
 
 
