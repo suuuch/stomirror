@@ -10,7 +10,7 @@ import urllib
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine
-Engine=create_engine("postgresql://grey:123456@localhost:5432/capital")
+Engine=create_engine("postgresql://shaw:123456@127.0.0.1:5432/shawdb")
 from multiprocessing import Pool
 
 
@@ -41,8 +41,8 @@ get163stocklist()
 
 def get163history(code):
     downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start=19900101&end='+datetime.datetime.today().strftime("%Y%m%d")+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
-    urllib.request.urlretrieve(downloadurl,'/home/grey/'+code[1:]+'.xls')
-    xl = pd.read_csv('/home/grey/'+code[1:]+'.xls', sep=",", encoding='gb2312')
+    urllib.urlretrieve(downloadurl,'trade_csv/'+code[1:]+'.xls')
+    xl = pd.read_csv('trade_csv/'+code[1:]+'.xls', sep=",", encoding='gb2312')
     xlx=xl.replace('None',np.nan) 
     for i in xlx.columns[3:]:
         xlx[i]=xlx[i].astype(float)
@@ -56,12 +56,12 @@ def get163history(code):
 
 
 
-print(datetime.datetime.today())
-pool=Pool(2)
-pool.map(get163history,stocklist163)
-print(datetime.datetime.today())
+# print(datetime.datetime.today())
+# pool=Pool(2)
+# pool.map(get163history,stocklist163)
+# print(datetime.datetime.today())
 
-
+map(get163history, stocklist163)
 # In[ ]:
 
 

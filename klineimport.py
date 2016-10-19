@@ -50,8 +50,6 @@ Engine=create_engine("postgresql://shaw:123456@127.0.0.1:5432/shawdb")
 from multiprocessing import Pool
 
 
-# In[2]:
-
 
 def get163stocklist():
     stocklist163 = []
