@@ -1,7 +1,4 @@
-
 # coding: utf-8
-
-# In[ ]:
 
 import requests
 import re
@@ -9,15 +6,11 @@ import datetime
 import urllib
 import pandas as pd
 import numpy as np
-import io
-from sqlalchemy import create_engine
-Engine=create_engine("postgresql://grey:123456@localhost:5432/capital")
+import io, sys
 from multiprocessing import Pool
+from database_conn import Engine
+import functools
 
-
-# In[ ]:
-
-stocklist163=[]
 def get163stocklist():
     url='http://quote.eastmoney.com/stocklist.html#sh'
     r=requests.get(url)
@@ -35,19 +28,13 @@ def get163stocklist():
         elif i[0]=="0":
             i= '1'+i
             stocklist163.append(i)
-
-get163stocklist()
-
-
-# In[ ]:
+    return stocklist163
 
 exceptlist=[]
 
-def get163history(code):
-
+def get163history(startdate, code):
     try:
-
-        downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start=19900101&end='+datetime.datetime.today().strftime("%Y%m%d")+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
+        downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start='+ startdate +'&end='+datetime.datetime.today().strftime("%Y%m%d")+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
         s=requests.get(downloadurl).content
         xl=pd.read_csv(io.StringIO(s.decode('gb2312')))
         #xl = pd.read_csv(downloadurl, sep=",", encoding='utf-8')
@@ -56,15 +43,12 @@ def get163history(code):
                     'amount','cap','floatcap']
 
     except Exception as e:
-
         exceptlist.append(code[1:])
         print('exception',code[1:])
         pass
 
     else:
-
         if xlx is not None:
-
             xlx.code=code[1:]
             for i in xlx.columns[3:]:
                 xlx[i]=xlx[i].astype(float)
@@ -80,8 +64,17 @@ def get163history(code):
 
 # In[ ]:
 
-print(datetime.datetime.today())
-pool=Pool(2)
-pool.map(get163history,stocklist163)
-print(datetime.datetime.today())
+if __name__ == '__main__':
+    try:
+        startdate = sys.argv[1]
+    except IndexError as e:
+        startdate = '19900101'
+
+    history_data_func = functools.partial(get163history, startdate)
+    stocklist163 = get163stocklist()
+
+    print(datetime.datetime.today())
+    pool=Pool(2)
+    pool.map(history_data_func,stocklist163)
+    print(datetime.datetime.today())
 

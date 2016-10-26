@@ -12,27 +12,7 @@ import httplib2
 import pandas as pd
 
 
-class pg_conn(object):
-    def __init__(self):
-        # 数据库连接
-        self.conn = psycopg2.connect(host='127.0.0.1',
-                                     user='shaw',
-                                     password='123456',
-                                     database='shawdb')
-
-        self.cur = self.conn.cursor()
-
-    def get_conn(self):
-        return self.conn
-
-    def get_cur(self):
-        return self.cur
-
-    def __del__(self):
-        self.conn.commit()
-        self.cur.close()
-        self.conn.close()
-
+from database_conn import pg_conn
 
 isremovecsv = False  # 是否删掉CSV文件
 reporttype = {'利润表': {'url': 'http://quotes.money.163.com/service/lrb_%s.html'},
