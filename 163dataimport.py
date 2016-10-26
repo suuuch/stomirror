@@ -36,14 +36,18 @@ cur = db.get_cur()
 def download_files_again(function):
     RETRIES = 0
     #重试的次数
-    count = {"num": RETRIES}
+    count = {"num": RETRIES, 'symbol': ''}
     def wrapped(*args, **kwargs):
         try:
           return function(*args, **kwargs)
         except Exception as err:
-            download(args[0], args[1])
-            if count['num'] < 9:
-                count['num'] += 1
+            print(count)
+            if count['num'] < 3 or count['symbol'] != args[1]:
+                count['symbol'] = args[0]
+                download(args[0], args[1])
+                if count['symbol'] == args[0]:
+                    count['num'] += 1
+
                 return wrapped(*args, **kwargs)
             else:
                 raise Exception(err)
@@ -145,7 +149,8 @@ def main(joozy):
     pass
 
 if __name__ == '__main__':
-    for i in get_all_symbol():
-        main(i)
-    # main('600754')
+    # for i in ['600764', '600765', '600766']:
+    #     main(i)
+    print(list(map(main, get_all_symbol())))
+    # main('600758')
     sys.exit()
