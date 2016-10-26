@@ -33,7 +33,7 @@ db = pg_conn()
 cur = db.get_cur()
 
 
-def download_fils_again(function):
+def download_files_again(function):
     RETRIES = 0
     #重试的次数
     count = {"num": RETRIES}
@@ -49,7 +49,7 @@ def download_fils_again(function):
                 raise Exception(err)
     return wrapped
 
-@download_fils_again
+@download_files_again
 def insert_data_to_database(symbol, reportname, filename):
     executesql = 'INSERT INTO investment.t_163_data VALUES '
     cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
@@ -145,7 +145,7 @@ def main(joozy):
     pass
 
 if __name__ == '__main__':
-    # for i in get_all_symbol():
-        # main(i)
-    main('600754')
+    for i in get_all_symbol():
+        main(i)
+    # main('600754')
     sys.exit()
