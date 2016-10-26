@@ -11,6 +11,7 @@ from multiprocessing import Pool
 from database_conn import Engine
 
 def get163stocklist():
+    stocklist163 = []
     url='http://quote.eastmoney.com/stocklist.html#sh'
     r=requests.get(url)
     data=re.findall(r'\([036][0-9]{5}\)',r.text)
@@ -45,7 +46,6 @@ def get163history(startdate, code):
         exceptlist.append(code[1:])
         print('exception',code[1:])
         pass
-
     else:
         if xlx is not None:
             xlx.code=code[1:]
