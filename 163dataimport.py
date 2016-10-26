@@ -42,7 +42,7 @@ def download_files_again(function):
           return function(*args, **kwargs)
         except Exception as err:
             print(count)
-            if count['num'] < 3 or count['symbol'] != args[1]:
+            if count['num'] < 3 or count['symbol'] != args[0]:
                 count['symbol'] = args[0]
                 download(args[0], args[1])
                 if count['symbol'] == args[0]:
