@@ -6,7 +6,7 @@ GRANT ALL PRIVILEGES ON DATABASE shawdb to shaw;
 
 '''
 
-
+import psycopg2
 from sqlalchemy import create_engine
 Engine=create_engine("postgresql://shaw:123456@127.0.0.1:5432/shawdb")
 

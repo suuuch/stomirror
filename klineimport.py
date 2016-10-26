@@ -53,7 +53,7 @@ def get163history(startdate ,code):
     enddate = datetime.datetime.today().strftime("%Y%m%d")
     downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start='+startdate + '&end='+enddate+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
     s=requests.get(downloadurl).content
-    xl=pd.read_csv(io.StringIO(s.decode('gb2312')))
+    xl=pd.read_csv(io.StringIO(s.decode('gb18030')))
     #xl = pd.read_csv(downloadurl, sep=",", encoding='utf-8')
     xlx=xl.replace('None',np.nan)
     for i in xlx.columns[3:]:

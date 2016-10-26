@@ -34,6 +34,7 @@ exceptlist=[]
 
 def get163history(startdate, code):
     try:
+        print(code)
         downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start='+ startdate +'&end='+datetime.datetime.today().strftime("%Y%m%d")+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
         s=requests.get(downloadurl).content
         xl=pd.read_csv(io.StringIO(s.decode('gb18030')))
@@ -59,9 +60,6 @@ def get163history(startdate, code):
         if xlx is None:
             print(code[1:], 'is None')
 
-
-
-# In[ ]:
 
 if __name__ == '__main__':
     try:

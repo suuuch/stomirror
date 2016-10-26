@@ -28,20 +28,39 @@ reporttype = {'利润表': {'url': 'http://quotes.money.163.com/service/lrb_%s.h
 itemtype = {}  # 类目
 reportlist = []
 h = httplib2.Http('.cache')
-executesql = 'INSERT INTO investment.t_163_data VALUES '
+
 db = pg_conn()
 cur = db.get_cur()
 
-def insert_data_to_database(symbol, reportname, filename):
 
+def download_fils_again(function):
+    RETRIES = 0
+    #重试的次数
+    count = {"num": RETRIES}
+    def wrapped(*args, **kwargs):
+        try:
+          return function(*args, **kwargs)
+        except Exception as err:
+            download(args[0], args[1])
+            if count['num'] < 9:
+                count['num'] += 1
+                return wrapped(*args, **kwargs)
+            else:
+                raise Exception(err)
+    return wrapped
+
+@download_fils_again
+def insert_data_to_database(symbol, reportname, filename):
+    executesql = 'INSERT INTO investment.t_163_data VALUES '
     cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
     # 类目载入
-    cur.execute('SELECT * FROM investment.t_163_item WHERE group_name = \'' + reportname + '\'')
+    cur.execute('SELECT * FROM investment.t_163_item WHERE group_id = \'' + reportname + '\'')
+
     for row in cur:
         itemtype[row[2]] = row[0]
 
     # 读取 csv
-    csvreader = csv.reader(open(filename, 'r', encoding='gbk'))
+    csvreader = csv.reader(open(filename, 'r', encoding='gb18030'))
     for row in csvreader:
         for index, value in enumerate(row):
             if value.strip() == '':
@@ -111,16 +130,22 @@ def main(joozy):
                 os.makedirs('csv/' + symbol)
 
             for i in reporttype:
-                download(symbol, i)
+                # 下载财报
+                # download(symbol, i)
+                # 导入财报
+                filename = 'csv/' + symbol + '/' + i + '.csv'
+                print(filename)
+                insert_data_to_database(symbol, i, filename)
 
             if isremovecsv:
                 shutil.rmtree('csv/' + symbol)
-        if len(executesql):
+        if len(executesql) > 41:
             cur.execute(executesql[:-1])
 
     pass
 
 if __name__ == '__main__':
-    for i in get_all_symbol():
-        main(i)
+    # for i in get_all_symbol():
+        # main(i)
+    main('600754')
     sys.exit()
