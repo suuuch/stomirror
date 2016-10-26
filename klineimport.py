@@ -40,45 +40,22 @@ http://quotes.money.163.com/f10/dbfx_601398.html
 
 
 import requests
-import re
+import re, functools
 import datetime
 import urllib
 import pandas as pd
 import numpy as np
-from sqlalchemy import create_engine
-Engine=create_engine("postgresql://shaw:123456@127.0.0.1:5432/shawdb")
 from multiprocessing import Pool
+from database_conn import Engine
+from nehistoryprice import get163stocklist
 
-
-
-def get163stocklist():
-    stocklist163 = []
-    url='http://quotes.money.163.com/hs/service/marketradar_ajax.php?page=0&query=STYPE%3AEQA&types=&count=3000&type=query&order=desc'
-    r=requests.get(url)
-    data=re.findall(r'"SYMBOL":"[0-9]{6}"',r.text)
-    data=re.findall("[603][0-9]{5}",str(data))
-
-
-    for i in data:
-        if i[0]=="6":
-            i='0'+i
-            stocklist163.append(i)
-        elif i[0]=="3":
-            i= '1'+i
-            stocklist163.append(i)
-        elif i[0]=="0":
-            i= '1'+i
-            stocklist163.append(i)
-
-     return stocklist163
-
-
-def get163history(code, startdate='19900101', enddate = datetime.datetime.today().strftime("%Y%m%d")):
+def get163history(startdate ,code):
+    enddate = datetime.datetime.today().strftime("%Y%m%d")
     downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start='+startdate + '&end='+enddate+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
     s=requests.get(downloadurl).content
     xl=pd.read_csv(io.StringIO(s.decode('gb2312')))
     #xl = pd.read_csv(downloadurl, sep=",", encoding='utf-8')
-    xlx=xl.replace('None',np.nan) 
+    xlx=xl.replace('None',np.nan)
     for i in xlx.columns[3:]:
         xlx[i]=xlx[i].astype(float)
     df["date"]=datetime.datetime.today().strftime('%Y-%m-%d')
@@ -88,7 +65,11 @@ def get163history(code, startdate='19900101', enddate = datetime.datetime.today(
 
 
 if __name__ == '__main__':
-    stocklist163 = get163stocklist() 
+    try:
+        startdate = sys.argv[1]
+    except IndexError as e:
+        startdate = '19900101'
+    history_data_func = functools.partial(get163history, startdate)
     print(datetime.datetime.today())
     pool=Pool(4)
     pool.map(get163history,stocklist163)

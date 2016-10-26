@@ -6,10 +6,9 @@ import datetime
 import urllib
 import pandas as pd
 import numpy as np
-import io, sys
+import io, sys, functools
 from multiprocessing import Pool
 from database_conn import Engine
-import functools
 
 def get163stocklist():
     url='http://quote.eastmoney.com/stocklist.html#sh'
@@ -36,7 +35,7 @@ def get163history(startdate, code):
     try:
         downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start='+ startdate +'&end='+datetime.datetime.today().strftime("%Y%m%d")+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
         s=requests.get(downloadurl).content
-        xl=pd.read_csv(io.StringIO(s.decode('gb2312')))
+        xl=pd.read_csv(io.StringIO(s.decode('gb18030')))
         #xl = pd.read_csv(downloadurl, sep=",", encoding='utf-8')
         xlx=xl.replace('None',np.nan)
         xlx.columns=['date','code','name','close','high','low','open','preclose','change','pctchange','turnover','volume',
