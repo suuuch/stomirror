@@ -8,7 +8,7 @@ CREATE TABLE investment.t_163_data (
   date       DATE DEFAULT NULL,
   item_key   INT DEFAULT NULL,
   item_value FLOAT DEFAULT NULL,
-  primary key(symbol,date)
+  primary key(symbol,date,item_key)
 );
 
 COMMENT ON TABLE investment.t_163_data IS '网易财报数据表';

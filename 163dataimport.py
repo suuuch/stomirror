@@ -98,7 +98,7 @@ def insert_data_to_database(symbol, reportname, filename):
 
 def download(symbol, reportname):
     if not os.path.exists('csv/' + symbol):
-                os.makedirs('csv/' + symbol)
+        os.makedirs('csv/' + symbol)
     # 下载文件
     resp, content = h.request(reporttype[reportname]['url'] % symbol)
     print(reporttype[reportname]['url'] % symbol)
@@ -132,8 +132,6 @@ def main(joozy):
     else:
         for symbol in match:
             print('# --------------------------------------------')
-
-
             for i in reporttype:
                 # 下载财报
                 # download(symbol, i)
