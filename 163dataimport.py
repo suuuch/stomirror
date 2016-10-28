@@ -6,7 +6,6 @@ import os
 import csv
 import re
 import sys
-
 import psycopg2
 import httplib2
 import pandas as pd
