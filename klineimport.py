@@ -90,4 +90,4 @@ if __name__ == '__main__':
         for dt in date_list:
             print("Starting Fecht Code %s ,Data From %s To %s ;" % (code, dt[0], dt[1]))
             rowcount = insert_data_to_database(dt[0], dt[1], code)
-            print("Code %s Insert Row %s " % (code, rowcount))
+            print("Code %s At %s to %s Insert Row %s " % (code, dt[0], dt[1] ,rowcount))
