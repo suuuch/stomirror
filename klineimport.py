@@ -32,25 +32,34 @@ def get163history(startdate, enddate, code):
     page = requests.get(downloadurl)
     page.encoding = 'utf-8'
     content = BeautifulSoup(page.text, 'lxml')
-    right_table = content.find('table')
-    trs = right_table.find_all('tr')
-    values = "(\'" + code + "\','%s', %s, '%s', %s, %s, %s ,'%s' ,'%s' )"
-    data = []
-    for k, tr in enumerate(trs):
-        if k == 0:
-            continue
-        tds = tr.find_all('td')
-        data.append(values % (tuple(map(lambda x:x.text , tds))))
-    return data
+    try:
+        right_table = content.find('table')
+        trs = right_table.find_all('tr')
+        values = "(\'" + code + "\','%s', %s, '%s', %s, %s, %s ,'%s' ,'%s' )"
+        data = []
+        for k, tr in enumerate(trs):
+            if k == 0:
+                continue
+            tds = tr.find_all('td')
+            data.append(values % (tuple(map(lambda x:x.text , tds))))
+        return data
+    except Exception as e:
+        print(downloadurl)
+        print(e)
+        return None
+
 
 def insert_data_to_database(startdate, enddate, code):
     db = pg_conn()
     cur = db.get_cur()
     data = get163history(startdate, enddate, code)
     sql = "insert into investment.t_stock_front(symbol, date, close, percent, open, high, low, vol, amount) values"
-    final_sql = sql + ','.join(data)
-    cur.execute(final_sql)
-    return cur.rowcount
+    if data:
+        final_sql = sql + ','.join(data)
+        cur.execute(final_sql)
+        return cur.rowcount
+    else:
+        return 0
 
 def get163stocklist():
     stocklist163 = []
@@ -79,5 +88,6 @@ if __name__ == '__main__':
 
     for code in stocklist163:
         for dt in date_list:
+            print("Starting Fecht Code %s ,Data From %s To %s ;" % (code, dt[0], dt[1]))
             rowcount = insert_data_to_database(dt[0], dt[1], code)
             print("Code %s Insert Row %s " % (code, rowcount))
