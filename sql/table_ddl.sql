@@ -74,3 +74,16 @@ CREATE TABLE investment.t_stock (
   optional int  NOT NULL,
   PRIMARY KEY (symbol)
 );
+drop table IF EXISTS investment.t_stock_front;
+create table investment.t_stock_front(
+	date varchar(12),
+	symbol	varchar(20),
+	close double precision,
+	percent varchar(20),
+	open	double precision,
+	high 	double precision,
+	low	double precision,
+	vol	varchar(46),
+	amount varchar(46),
+	CONSTRAINT t_stock_front_pkey PRIMARY KEY (symbol, date)
+);
