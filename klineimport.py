@@ -1,76 +1,83 @@
-# encoding: utf-8
+# coding: utf-8
 import re
 
-__author__ = 'airsen'
 """
-reference url:
-http://quotes.money.163.com/hs/service/marketradar_ajax.php?page=0&query=STYPE%3AEQA&types=&count=28&type=query&order=desc
-query string:
-page:0
-query:STYPE:EQA
-types:
-count:28
-type:query
-order:desc
-沪深A股:EQA
-沪市A股:EQA_EXCHANGE_CNSESH -> EQA;EXCHANGE;CNSESH
-深市A股:EQA_EXCHANGE_CNSESZ -> EQA;EXCHANGE;CNSESZ
-fiddle: %2C is ,
-http://quotes.money.163.com/hs/service/diyrank.php?page=0&query=STYPE%3AEQA&fields=NO%2CSYMBOL%2CNAME%2CPRICE%2CPERCENT%2CUPDOWN%2CFIVE_MINUTE%2COPEN%2CYESTCLOSE%2CHIGH%2CLOW%2CVOLUME%2CTURNOVER%2CHS%2CLB%2CWB%2CZF%2CPE%2CMCAP%2CTCAP%2CMFSUM%2CMFRATIO.MFRATIO2%2CMFRATIO.MFRATIO10%2CSNAME%2CCODE%2CANNOUNMT%2CUVSNEWS&sort=PERCENT&order=desc&count=24&type=query HTTP/1.1
-simple:
-http://quotes.money.163.com/hs/service/diyrank.php?page=0&query=STYPE%3AEQA%3BEXCHANGE%3ACNSESH&fields=NO,SYMBOL,NAME,PRICE,YESTCLOSE,OPEN,FIVE_MINUTE&sort=NO&order=desc&count=24&type=query
-http://quotes.money.163.com/hs/service/diyrank.php?page=0&query=STYPE:EQA;EXCHANGE;CNSESH&fields=NO,SYMBOL,NAME,PRICE,YESTCLOSE,OPEN,FIVE_MINUTE&sort=SYMBOL&order=asc&count=24&type=query
-sort=SYMBOL
-163
-日内实时盘口（JSON）：
-http://api.money.126.net/data/feed/1000002,1000001,1000881,0601398,money.api
-历史成交数据（CSV）：
-http://quotes.money.163.com/service/chddata.html?code=0601398&start=20000720&end=20150508
-财务指标（CSV）：
-http://quotes.money.163.com/service/zycwzb_601398.html?type=report
-资产负债表（CSV）：
-http://quotes.money.163.com/service/zcfzb_601398.html
-利润表（CSV）：
-http://quotes.money.163.com/service/lrb_601398.html
-现金流表（CSV）：
-http://quotes.money.163.com/service/xjllb_601398.html
-杜邦分析（HTML）：
-http://quotes.money.163.com/f10/dbfx_601398.html
+drop table investment.t_stock_front;
+create table investment.t_stock_front(
+	date varchar(12),
+	symbol	varchar(20),
+	close double precision,
+	percent varchar(20),
+	open	double precision,
+	high 	double precision,
+	low	double precision,
+	vol	varchar(46),
+	amount varchar(46),
+	CONSTRAINT t_stock_front_pkey PRIMARY KEY (symbol, date)
 """
-
+__author__ = 'suuuch'
 
 import requests
 import re, functools
 import datetime
-import urllib
-import pandas as pd
-import numpy as np
-from multiprocessing import Pool
-from database_conn import Engine
-from nehistoryprice import get163stocklist
-
-def get163history(startdate ,code):
-    enddate = datetime.datetime.today().strftime("%Y%m%d")
-    downloadurl='http://quotes.money.163.com/service/chddata.html?code='+code+'&start='+startdate + '&end='+enddate+'&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP'
-    s=requests.get(downloadurl).content
-    xl=pd.read_csv(io.StringIO(s.decode('gb18030')))
-    #xl = pd.read_csv(downloadurl, sep=",", encoding='utf-8')
-    xlx=xl.replace('None',np.nan)
-    for i in xlx.columns[3:]:
-        xlx[i]=xlx[i].astype(float)
-    df["date"]=datetime.datetime.today().strftime('%Y-%m-%d')
-    df['time']=datetime.datetime.today().strftime('%H:%M:%S')
-    xlx.to_sql('nehistorypricetest',Engine,if_exists='append')
+from bs4 import BeautifulSoup
+from database_conn import pg_conn
 
 
+# http://app.finance.china.com.cn/stock/quote/history_factor.php?code=sz000001&begin_day=2016-01-01&end_day=20161031&direction=front
+# http://app.finance.china.com.cn/stock/quote/history_factor.php?code=sz000001&begin_day=2012-01-01&end_day=2012-12-31&direction=front
+def get163history(startdate, enddate, code):
+    base_url = 'http://app.finance.china.com.cn/stock/quote/history_factor.php?code=%s&begin_day=%s&end_day=%s&direction=front'
+    downloadurl = base_url % (code, startdate, enddate)
+    page = requests.get(downloadurl)
+    page.encoding = 'utf-8'
+    content = BeautifulSoup(page.text, 'lxml')
+    right_table = content.find('table')
+    trs = right_table.find_all('tr')
+    values = "(\'" + code + "\','%s', %s, '%s', %s, %s, %s ,'%s' ,'%s' )"
+    data = []
+    for k, tr in enumerate(trs):
+        if k == 0:
+            continue
+        tds = tr.find_all('td')
+        data.append(values % (tuple(map(lambda x:x.text , tds))))
+    return data
+
+def insert_data_to_database(startdate, enddate, code):
+    db = pg_conn()
+    cur = db.get_cur()
+    data = get163history(startdate, enddate, code)
+    sql = "insert into investment.t_stock_front(symbol, date, close, percent, open, high, low, vol, amount) values"
+    final_sql = sql + ','.join(data)
+    cur.execute(final_sql)
+    return cur.rowcount
+
+def get163stocklist():
+    stocklist163 = []
+    url='http://quote.eastmoney.com/stocklist.html#sh'
+    r=requests.get(url)
+    data=re.findall(r'\([036][0-9]{5}\)',r.text)
+    data=[i[1:-1] for i in data]
+    print('data length is',len(data))
+    print('unique data length is',len(set(data)))
+    for i in data:
+        if i[0]=="6":
+            i='sh'+i
+            stocklist163.append(i)
+        elif i[0] in ("3","0" ):
+            i= 'sz'+i
+            stocklist163.append(i)
+    return stocklist163
 
 if __name__ == '__main__':
-    try:
-        startdate = sys.argv[1]
-    except IndexError as e:
-        startdate = '19900101'
-    history_data_func = functools.partial(get163history, startdate)
-    print(datetime.datetime.today())
-    pool=Pool(4)
-    pool.map(get163history,stocklist163)
-    print(datetime.datetime.today())
+    stocklist163 = get163stocklist()
+    date_list = [('20160101','20161231'),
+                 ('20150101','20151231'),
+                 ('20140101','20141231'),
+                 ('20130101','20131231'),
+                 ('20120101','20121231')]
+
+    for code in stocklist163:
+        for dt in date_list:
+            rowcount = insert_data_to_database(dt[0], dt[1], code)
+            print("Code %s Insert Row %s " % (code, rowcount))
