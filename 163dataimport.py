@@ -6,12 +6,9 @@ import os
 import csv
 import re
 import sys
-
 import psycopg2
 import httplib2
 import pandas as pd
-
-
 from database_conn import pg_conn
 
 isremovecsv = False  # 是否删掉CSV文件
@@ -41,16 +38,17 @@ def download_files_again(function):
         try:
           return function(*args, **kwargs)
         except Exception as err:
-            print(count)
-            if count['num'] < 3 or count['symbol'] != args[0]:
+            if count['symbol'] != args[0]:
+                count['num'] = RETRIES
                 count['symbol'] = args[0]
-                download(args[0], args[1])
-                if count['symbol'] == args[0]:
-                    count['num'] += 1
-
-                return wrapped(*args, **kwargs)
-            else:
+            print(count)
+            if count['num'] > 9:
                 raise Exception(err)
+            else:
+                count['num'] += 1
+                download(args[0], args[1])
+                return wrapped(*args, **kwargs)
+
     return wrapped
 
 @download_files_again
@@ -97,6 +95,8 @@ def insert_data_to_database(symbol, reportname, filename):
 
 
 def download(symbol, reportname):
+    if not os.path.exists('csv/' + symbol):
+        os.makedirs('csv/' + symbol)
     # 下载文件
     resp, content = h.request(reporttype[reportname]['url'] % symbol)
     print(reporttype[reportname]['url'] % symbol)
@@ -104,18 +104,6 @@ def download(symbol, reportname):
     profitfile = open(filename, 'wb+')
     profitfile.write(content)
     profitfile.close()
-
-
-def get_all_symbol():
-    code_list = pd.read_csv('resources/code_list_choose.csv', encoding='gbk')
-    code_list = code_list['ticker']
-    return list(map(fill_code_len, code_list.tolist()))
-
-
-# 补齐代码缺失位数
-def fill_code_len(ticker):
-    ticker = '000000%s' % ticker
-    return ticker[-6:]
 
 
 def main(joozy):
@@ -130,9 +118,6 @@ def main(joozy):
     else:
         for symbol in match:
             print('# --------------------------------------------')
-            if not os.path.exists('csv/' + symbol):
-                os.makedirs('csv/' + symbol)
-
             for i in reporttype:
                 # 下载财报
                 # download(symbol, i)
@@ -140,7 +125,6 @@ def main(joozy):
                 filename = 'csv/' + symbol + '/' + i + '.csv'
                 print(filename)
                 insert_data_to_database(symbol, i, filename)
-
             if isremovecsv:
                 shutil.rmtree('csv/' + symbol)
         if len(executesql) > 41:
@@ -148,9 +132,23 @@ def main(joozy):
 
     pass
 
+
+def get_all_symbol():
+    code_list = pd.read_csv('resources/code_list_choose.csv', encoding='gbk')
+    code_list = code_list['ticker']
+    return list(map(fill_code_len, code_list.tolist()))
+
+
+# 补齐代码缺失位数
+def fill_code_len(ticker):
+    ticker = '000000%s' % ticker
+    return ticker[-6:]
+
+
 if __name__ == '__main__':
     # for i in ['600764', '600765', '600766']:
     #     main(i)
-    print(list(map(main, get_all_symbol())))
-    # main('600758')
+    stock_list = get_all_symbol()
+    print(list(map(main, stock_list)))
+    # main('060000')
     sys.exit()
