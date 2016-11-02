@@ -133,22 +133,23 @@ def main(joozy):
     pass
 
 
-def get_all_symbol():
-    code_list = pd.read_csv('resources/code_list_choose.csv', encoding='gbk')
-    code_list = code_list['ticker']
-    return list(map(fill_code_len, code_list.tolist()))
-
-
-# 补齐代码缺失位数
-def fill_code_len(ticker):
-    ticker = '000000%s' % ticker
-    return ticker[-6:]
+def get163stocklist():
+    stocklist163 = []
+    url='http://quote.eastmoney.com/stocklist.html#sh'
+    r=requests.get(url)
+    data=re.findall(r'\([036][0-9]{5}\)',r.text)
+    data=[i[1:-1] for i in data]
+    print('data length is',len(data))
+    print('unique data length is',len(set(data)))
+    for i in data:
+        stocklist163.append(i)
+    return stocklist163
 
 
 if __name__ == '__main__':
     # for i in ['600764', '600765', '600766']:
     #     main(i)
-    stock_list = get_all_symbol()
+    stock_list = get163stocklist()
     print(list(map(main, stock_list)))
     # main('060000')
     sys.exit()
