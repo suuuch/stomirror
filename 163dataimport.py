@@ -54,8 +54,6 @@ def insert_data_to_database(symbol, reportname, filename):
     csvreader = csv.reader(open(filename, 'r', encoding='gb18030'))
     for row in csvreader:
         for index, value in enumerate(row):
-            print(index)
-            exit()
             if value.strip() == '':
                 continue
             if row[0].strip() == '报告日期' or row[0].strip() == '报告期':
@@ -67,7 +65,7 @@ def insert_data_to_database(symbol, reportname, filename):
                     try:
                         value = float(value)
                     except ValueError:
-                        value = 0
+                        continue
                     reportlist[index - 1][str(row[0].strip())] = str(value)
 
     # 存库

@@ -6,7 +6,7 @@ DROP TABLE IF EXISTS investment.t_163_data;
 CREATE TABLE investment.t_163_data (
   symbol     VARCHAR(11) DEFAULT NULL,
   date       DATE DEFAULT NULL,
-  item_key   INT DEFAULT NULL,
+  item_key   VARCHAR(128) DEFAULT NULL,
   item_value FLOAT DEFAULT NULL,
   primary key(symbol,date,item_key)
 );
