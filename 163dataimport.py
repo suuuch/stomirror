@@ -138,7 +138,7 @@ if __name__ == '__main__':
     # for i in ['600764', '600765', '600766']:
     #     main(i)
     stock_list = get163stocklist()
-    # print(list(map(main, stock_list)))
-    main('000001')
+    print(list(map(main, stock_list)))
+    # main('000001')
     # values = insert_data_to_database('000001', '利润表', 'csv/000001/利润表.csv')
     sys.exit()
