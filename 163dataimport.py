@@ -44,22 +44,18 @@ def download_files_again(function):
                 count['num'] += 1
                 download(args[0], args[1])
                 return wrapped(*args, **kwargs)
-
     return wrapped
 
-@download_files_again
+# @download_files_again
 def insert_data_to_database(symbol, reportname, filename):
     executesql = 'INSERT INTO investment.t_163_data VALUES '
-    # 类目载入
-    cur.execute('SELECT * FROM investment.t_163_item WHERE group_id = \'' + reportname + '\'')
-
-    for row in cur:
-        itemtype[row[2]] = row[0]
 
     # 读取 csv
     csvreader = csv.reader(open(filename, 'r', encoding='gb18030'))
     for row in csvreader:
         for index, value in enumerate(row):
+            print(index)
+            exit()
             if value.strip() == '':
                 continue
             if row[0].strip() == '报告日期' or row[0].strip() == '报告期':
@@ -72,21 +68,19 @@ def insert_data_to_database(symbol, reportname, filename):
                         value = float(value)
                     except ValueError:
                         value = 0
-                    reportlist[index - 1][str(itemtype[row[0].strip()])] = str(value)
+                    reportlist[index - 1][str(row[0].strip())] = str(value)
 
     # 存库
+    values_list = []
     for report in reportlist:
-        for item in report:
-            if item != 'date':
-                global executesql
-                executesql += '(\'' + symbol + '\',\'' + report['date'] + '\',\'' + item + '\',\'' + report[
-                    item] + '\'),'
+        values = "('%s', '%s', '%%s' ,%%s)" % (symbol, report['date'])
+        for key, item in report.items():
+            if key != 'date':
+                values_list.append(values % (key, item))
 
     print(symbol + '导入' + reportname + '数据:' + str(len(reportlist)))
 
-    itemtype.clear()
-    reportlist.clear()
-    pass
+    return  executesql + ','.join(values_list)
 
 
 def download(symbol, reportname):
@@ -120,13 +114,13 @@ def main(joozy):
                 # 导入财报
                 filename = 'csv/' + symbol + '/' + i + '.csv'
                 print(filename)
-                insert_data_to_database(symbol, i, filename)
+                executesql = insert_data_to_database(symbol, i, filename)
             if isremovecsv:
                 shutil.rmtree('csv/' + symbol)
-        if len(executesql) > 41:
-            cur.execute(executesql[:-1])
+            if len(executesql) > 41:
+                cur.execute(executesql)
+                print(cur.rowcount)
 
-    pass
 
 
 def get163stocklist():
@@ -146,6 +140,7 @@ if __name__ == '__main__':
     # for i in ['600764', '600765', '600766']:
     #     main(i)
     stock_list = get163stocklist()
-    print(list(map(main, stock_list)))
-    # main('060000')
+    # print(list(map(main, stock_list)))
+    main('000001')
+    # values = insert_data_to_database('000001', '利润表', 'csv/000001/利润表.csv')
     sys.exit()
