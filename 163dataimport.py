@@ -2,11 +2,7 @@
 import shutil
 
 __author__ = 'airsen'
-import os
-import csv
-import re
-import sys
-import psycopg2
+import os, requests, csv, re, sys, psycopg2
 import httplib2
 import pandas as pd
 from database_conn import pg_conn
@@ -54,7 +50,6 @@ def download_files_again(function):
 @download_files_again
 def insert_data_to_database(symbol, reportname, filename):
     executesql = 'INSERT INTO investment.t_163_data VALUES '
-    cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
     # 类目载入
     cur.execute('SELECT * FROM investment.t_163_item WHERE group_id = \'' + reportname + '\'')
 
@@ -118,6 +113,7 @@ def main(joozy):
     else:
         for symbol in match:
             print('# --------------------------------------------')
+            cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
             for i in reporttype:
                 # 下载财报
                 # download(symbol, i)
