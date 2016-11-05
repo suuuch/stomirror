@@ -18,8 +18,6 @@ reporttype = {'利润表': {'url': 'http://quotes.money.163.com/service/lrb_%s.h
               '营运能力': {'url': 'http://quotes.money.163.com/service/zycwzb_%s.html?part=yynl'},
               '现金流量表': {'url': 'http://quotes.money.163.com/service/xjllb_%s.html'}}
 
-itemtype = {}  # 类目
-reportlist = []
 h = httplib2.Http('.cache')
 
 db = pg_conn()
@@ -46,9 +44,16 @@ def download_files_again(function):
                 return wrapped(*args, **kwargs)
     return wrapped
 
-# @download_files_again
+@download_files_again
 def insert_data_to_database(symbol, reportname, filename):
+    reportlist = []
+    itemtype = {}  # 类目
     executesql = 'INSERT INTO investment.t_163_data VALUES '
+
+    # 类目载入
+    cur.execute('SELECT * FROM investment.t_163_item WHERE group_id = \'' + reportname + '\'')
+    for row in cur:
+        itemtype[row[2]] = row[0]
 
     # 读取 csv
     csvreader = csv.reader(open(filename, 'r', encoding='gb18030'))
@@ -66,7 +71,7 @@ def insert_data_to_database(symbol, reportname, filename):
                         value = float(value)
                     except ValueError:
                         continue
-                    reportlist[index - 1][str(row[0].strip())] = str(value)
+                    reportlist[index - 1][str(itemtype[row[0].strip()])] = str(value)
 
     # 存库
     values_list = []
@@ -106,17 +111,18 @@ def main(joozy):
         for symbol in match:
             print('# --------------------------------------------')
             cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
+            db.commit()
             for i in reporttype:
                 # 下载财报
                 # download(symbol, i)
                 # 导入财报
                 filename = 'csv/' + symbol + '/' + i + '.csv'
                 print(filename)
-                executesql = insert_data_to_database(symbol, i, filename)
+                sql = insert_data_to_database(symbol, i, filename)
             if isremovecsv:
                 shutil.rmtree('csv/' + symbol)
-            if len(executesql) > 41:
-                cur.execute(executesql)
+            if len(sql) > 41:
+                cur.execute(sql)
                 print(cur.rowcount)
 
 
