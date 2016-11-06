@@ -111,7 +111,6 @@ def main(joozy):
         for symbol in match:
             print('# --------------------------------------------')
             cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
-            db.commit()
             for i in reporttype:
                 # 下载财报
                 # download(symbol, i)
