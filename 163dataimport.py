@@ -18,10 +18,7 @@ reporttype = {'利润表': {'url': 'http://quotes.money.163.com/service/lrb_%s.h
               '营运能力': {'url': 'http://quotes.money.163.com/service/zycwzb_%s.html?part=yynl'},
               '现金流量表': {'url': 'http://quotes.money.163.com/service/xjllb_%s.html'}}
 
-h = httplib2.Http('.cache')
 
-db = pg_conn()
-cur = db.get_cur()
 
 
 def download_files_again(function):
@@ -51,8 +48,8 @@ def insert_data_to_database(symbol, reportname, filename):
     executesql = 'INSERT INTO investment.t_163_data VALUES '
 
     # 类目载入
-    cur.execute('SELECT * FROM investment.t_163_item WHERE group_id = \'' + reportname + '\'')
-    for row in cur:
+    data = db.exec_with_select('SELECT * FROM investment.t_163_item WHERE group_id = \'' + reportname + '\'')
+    for row in data:
         itemtype[row[2]] = row[0]
 
     # 读取 csv
@@ -83,7 +80,7 @@ def insert_data_to_database(symbol, reportname, filename):
 
     print(symbol + '导入' + reportname + '数据:' + str(len(reportlist)))
 
-    return  executesql + ','.join(values_list)
+    return  executesql + ','.join(set(values_list))
 
 
 def download(symbol, reportname):
@@ -98,7 +95,7 @@ def download(symbol, reportname):
     profitfile.close()
 
 
-def main(joozy):
+def fetch_data_to_database(joozy):
 
     # joozy = input('下载网易股票财报，股票代码:')
     # joozy = '600779'
@@ -110,19 +107,20 @@ def main(joozy):
     else:
         for symbol in match:
             print('# --------------------------------------------')
-            cur.execute('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
+            db.exec_with_commit('DELETE FROM investment.t_163_data WHERE SYMBOL = \'' + symbol + '\'')
+
             for i in reporttype:
+                sql = None
                 # 下载财报
                 # download(symbol, i)
                 # 导入财报
                 filename = 'csv/' + symbol + '/' + i + '.csv'
                 print(filename)
                 sql = insert_data_to_database(symbol, i, filename)
-            if isremovecsv:
-                shutil.rmtree('csv/' + symbol)
-            if len(sql) > 41:
-                cur.execute(sql)
-                print(cur.rowcount)
+                if isremovecsv:
+                    shutil.rmtree('csv/' + symbol)
+                if len(sql) > 41:
+                    db.exec_with_commit(sql)
 
 
 
@@ -140,10 +138,9 @@ def get163stocklist():
 
 
 if __name__ == '__main__':
-    # for i in ['600764', '600765', '600766']:
-    #     main(i)
+    h = httplib2.Http('.cache')
+    db = pg_conn()
     stock_list = get163stocklist()
-    print(list(map(main, stock_list)))
-    # main('000001')
-    # values = insert_data_to_database('000001', '利润表', 'csv/000001/利润表.csv')
+    print(list(map(fetch_data_to_database, stock_list)))
+    # fetch_data_to_database('603727')
     sys.exit()

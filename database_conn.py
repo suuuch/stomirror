@@ -20,13 +20,24 @@ class pg_conn(object):
 
         self.cur = self.conn.cursor()
 
-    def get_conn(self):
-        return self.conn
 
-    def get_cur(self):
+    def exec_with_select(self, sql):
+        self.cur.execute(sql)
         return self.cur
+
+    def exec_with_commit(self,sql):
+        self.cur.execute(sql)
+        self.conn.commit()
+        return self.cur.rowcount
 
     def __del__(self):
         self.conn.commit()
         self.cur.close()
         self.conn.close()
+
+
+if __name__ == '__main__':
+    sql = 'SELECT * FROM investment.t_163_item WHERE group_id = \'主要财务指标\''
+    db = pg_conn()
+    print(db.exec_with_select(sql))
+
