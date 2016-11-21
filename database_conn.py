@@ -20,6 +20,8 @@ class pg_conn(object):
 
         self.cur = self.conn.cursor()
 
+    def get_cur(self):
+        return self.cur
 
     def exec_with_select(self, sql):
         self.cur.execute(sql)
@@ -40,4 +42,3 @@ if __name__ == '__main__':
     sql = 'SELECT * FROM investment.t_163_item WHERE group_id = \'主要财务指标\''
     db = pg_conn()
     print(db.exec_with_select(sql))
-
