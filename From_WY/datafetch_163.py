@@ -4,6 +4,14 @@ from DataFecth.DataFetcher import FetcherDataFromUrl
 import pandas as pd
 import io
 
+url = 'http://quotes.money.163.com/service/zycwzb_600779.html'
+
+fdf = FetcherDataFromUrl()
+c = fdf.download(url)
+df = pd.read_csv(io.StringIO(c.content.decode('gb18030')))
+print(df.T)
+
+
 class WYData(object):
     def __init__(self):
         self.reporttype = {
@@ -29,7 +37,8 @@ class WYData(object):
 
         self.fdf = FetcherDataFromUrl()
 
-    def get_report_type(self, rpt_type):
-        rpt_type_url = self.reporttype.get(rpt_type, None)
-        df = pd.read_csv(io.StringIO(self.fdf.download(rpt_type_url).content.decode('gb18030')))
+    def get_report_type(self, code, rpt_type):
+        rpt_type_url = self.reporttype.get(rpt_type, None)[url]
+        c = self.fdf.download(rpt_type_url % code)
+        df = pd.read_csv(io.StringIO(c.content.decode('gb18030')))
         return df.T
