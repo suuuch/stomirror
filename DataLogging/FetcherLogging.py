@@ -6,7 +6,7 @@ import logging.config
 class DataLogging(object):
     def __init__(self):
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.WARNING,
             format='%(asctime)s %(filename)s[line:%(lineno)d] %(levelname)s %(message)s',
             datefmt='%a, %d %b %Y %H:%M:%S',
         )
