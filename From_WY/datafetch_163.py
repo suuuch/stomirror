@@ -4,7 +4,7 @@ from DataFecth.DataFetcher import FetcherDataFromUrl
 import pandas as pd
 import io
 
-url = 'http://quotes.money.163.com/service/zycwzb_600779.html'
+
 
 class WYData(object):
     def __init__(self):
