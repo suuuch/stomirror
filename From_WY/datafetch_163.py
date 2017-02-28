@@ -1,9 +1,8 @@
 # encoding: utf-8
-
 from DataFecth.DataFetcher import FetcherDataFromUrl
 import pandas as pd
 import io
-
+from pypinyin import lazy_pinyin
 
 
 class WYData(object):
@@ -37,4 +36,7 @@ class WYData(object):
 
         c = self.fdf.download(rpt_type_url['url'] % code)
         df = pd.read_csv(io.StringIO(c.content.decode('gb18030')))
+        df['report_date'] = df[df.columns[0]].apply(lambda x: '_'.join(lazy_pinyin(x)))
+        df.drop(df.columns[0], axis=1, inplace=True)
+        df.set_index('report_date')
         return df[df.columns[~df.columns.str.contains('Unnamed')]].T
