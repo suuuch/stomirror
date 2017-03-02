@@ -33,10 +33,8 @@ class WYData(object):
     def get_report_type(self, code, rpt_type):
         rpt_type_url = self.reporttype.get(rpt_type, None)
         assert rpt_type_url, 'Input Report Type : [%s]  NOT FOUND !' % rpt_type
-
         c = self.fdf.download(rpt_type_url['url'] % code)
         df = pd.read_csv(io.StringIO(c.content.decode('gb18030')))
         df['report_date'] = df[df.columns[0]].apply(lambda x: '_'.join(lazy_pinyin(x)))
         df.drop(df.columns[0], axis=1, inplace=True)
-        df.set_index('report_date')
-        return df[df.columns[~df.columns.str.contains('Unnamed')]].T
+        return df[df.columns[~df.columns.str.contains('Unnamed')]].set_index('report_date').T
