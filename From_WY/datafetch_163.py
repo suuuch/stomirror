@@ -37,4 +37,5 @@ class WYData(object):
         df = pd.read_csv(io.StringIO(c.content.decode('gb18030')))
         df['report_date'] = df[df.columns[0]].apply(lambda x: '_'.join(lazy_pinyin(x)))
         df.drop(df.columns[0], axis=1, inplace=True)
+        df = df.convert_objects(convert_numeric=True)
         return df[df.columns[~df.columns.str.contains('Unnamed')]].set_index('report_date').T
