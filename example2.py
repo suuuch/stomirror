@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 Engine=create_engine("postgresql://shaw:123456@127.0.0.1:5432/shawdb")
 
 def insert_data_to_pg(code):
+    wy = WYData()
     rst = delete_old_data_from_pg(code)
     print('Delete Code : %s ,Delete  Row Count is :%s' % (code, rst))
     report_type_list = {'lrb': '利润表',
@@ -32,26 +33,45 @@ def delete_old_data_from_pg(code):
     rst = Engine.connect().execute(sql).rowcount
     return rst
 
+def get_already_in_code():
+    already_in_code = """
+            select code,max(report_date) as last_report_date
+            from public.report_data
+            where report_date > to_char(current_date::timestamp + '-3 month', 'YYYY-MM-DD')
+            group by code
+        """
+    db_already_in_code = pd.read_sql(already_in_code, Engine)
+    return list(db_already_in_code['code'])
+
+def get_not_fetch_code():
+    not_fetch_code_sql = """
+            select distinct code as code
+            from public.t_classified t
+            where not exists(
+            select 1 from public.report_data t1 where t.code = t1.code
+            )
+        """
+    not_fet_code_list = pd.read_sql(not_fetch_code_sql, Engine)
+    return list(not_fet_code_list['code'])
 
 
-wy = WYData()
-from time import sleep
-
-already_in_code = """
-        select code,max(report_date) as last_report_date
-        from public.report_data
-        where report_date > to_char(current_date::timestamp + '-3 month', 'YYYY-MM-DD')
-        group by code;
-    """
-db_already_in_code = pd.read_sql(already_in_code, Engine)
-db_already_in_code_lists = list(db_already_in_code['code'])
-
-db_code = pd.read_sql('SELECT distinct code   FROM public.t_classified', Engine)
-code_lists = list(db_code['code'])
+def get_all_code():
+    db_code = pd.read_sql('SELECT distinct code FROM public.t_classified', Engine)
+    return list(db_code['code'])
 
 
-db_not_in_code = set(code_lists) - set(db_already_in_code_lists)
 
-for code in db_not_in_code:
-    insert_data_to_pg(code)
-    sleep(10)
+if __name__ == '__main__':
+    from time import sleep
+    not_fetch_code = get_not_fetch_code()
+
+    if len(not_fetch_code) > 0:
+        db_fetch_code_list = not_fetch_code
+    else:
+        db_already_in_code_lists = get_already_in_code()
+        code_lists = get_all_code()
+        db_fetch_code_list = set(code_lists) - set(db_already_in_code_lists)
+
+    for code in db_fetch_code_list:
+        insert_data_to_pg(code)
+        sleep(3)
